@@ -1,0 +1,68 @@
+## Deployment
+apiVersion:  apps/v1
+kind: StatefulSet
+metadata:
+  namespace: monitoring
+  annotations:
+  labels:
+    zabbix-stack.service: zabbix-server
+  name: zabbix-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      zabbix-stack.service: zabbix-server  
+  serviceName: "zabbix-server"
+  #strategy:
+  #  type: Recreate
+  template:
+    metadata:
+      labels:
+        zabbix-stack.service: zabbix-server
+    spec:
+      containers:
+      - image: zabbix/zabbix-server-mysql:6.4.14-ubuntu
+        name: zabbix-server
+        env:
+          - name: DB_SERVER_HOST
+            value: 10.10.2.160
+          - name: DB_SERVER_PORT
+            value: "3306"
+          - name: MYSQL_USER
+            value: "zabbix"
+          - name: MYSQL_PASSWORD
+            value: "zabbix@123"
+        ports:
+        - containerPort: 10051
+        volumeMounts:
+        - name: zabbix-server-vol1
+          mountPath: /etc/localtime
+        - name: zabbix-server-vol2
+          mountPath: /etc/timezone
+      volumes:
+      - name: zabbix-server-vol1
+        hostPath:
+          path: /etc/localtime
+      - name: zabbix-server-vol2
+        hostPath:
+          path: /etc/timezone     
+      restartPolicy: Always
+#### Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monitoring
+  labels:
+    zabbix-stack.service: zabbix-server
+  name: zabbix-server
+spec:
+  type: LoadBalancer
+  ports:
+  - name: "10051"
+    port: 10051
+    targetPort: 10051
+  selector:
+    zabbix-stack.service: zabbix-server
+status:
+  loadBalancer: {}

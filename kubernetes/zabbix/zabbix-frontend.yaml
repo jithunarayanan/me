@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: monitoring
+  annotations:
+  creationTimestamp: null
+  labels:
+    zabbix-stack.service: zabbix-web
+  name: zabbix-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      zabbix-stack.service: zabbix-web
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+      creationTimestamp: null
+      labels:
+        zabbix-stack.network/zabbix-network: "true"
+        zabbix-stack.service: zabbix-web
+    spec:
+      containers:
+        - env:
+            - name: DB_SERVER_HOST
+              value: 10.10.2.160
+            - name: DB_SERVER_PORT
+              value: "3306"
+            - name: MYSQL_DATABASE
+              value: zabbix
+            - name: MYSQL_PASSWORD
+              value: zabbix@123
+            - name: MYSQL_USER
+              value: zabbix
+            - name: ZBX_SERVER_HOST
+              value: zabbix-server
+          image: zabbix/zabbix-web-nginx-mysql:latest
+          name: zabbix-web
+          ports:
+            - containerPort: 8080
+          resources: {}
+      restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monitoring
+  annotations:
+  creationTimestamp: null
+  labels:
+    zabbix-stack.service: zabbix-web
+  name: zabbix-web
+spec:
+  type: LoadBalancer
+  ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 8080
+  selector:
+    zabbix-stack.service: zabbix-web
+status:
+  loadBalancer: {}

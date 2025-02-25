@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: monitoring
+  annotations:
+  creationTimestamp: null
+  labels:
+    monitoring-stack.service: grafana
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      monitoring-stack.service: grafana
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+      creationTimestamp: null
+      labels:
+        monitoring-stack.network/zabbix-network: "true"
+        monitoring-stack.service: grafana
+    spec:
+      containers:
+          image: zabbix/zabbix-web-nginx-mysql:latest
+          name: grafana
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+          - name: grafana-vol-1
+            mountPath: /var/lib/grafana
+          - name: grafana-vol-2
+            mountPath: /etc/grafana
+        volumes:
+        - name: grafana-vol-1
+          hostPath:
+            path: /data/grafana/lib/grafana
+        - name: grafana-vol-2
+          hostPath:
+            path: /data/grafana/etc/grafana
+        resources: {}
+      restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monitoring
+  annotations:
+  creationTimestamp: null
+  labels:
+    monitoring-stack.service: grafana
+  name: grafana
+spec:
+  type: LoadBalancer
+  ports:
+    - name: "3030"
+      port: 3030
+      targetPort: 3000
+  selector:
+    monitoring-stack.service: grafana
+status:
+  loadBalancer: {}
+

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: webservers
+  annotations:
+  creationTimestamp: null
+  labels:
+    gitlab.service: gitlab
+  name: gitlab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      gitlab.service: gitlab
+  minReadySeconds: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      namespace: webservers
+      annotations:
+      creationTimestamp: null
+      labels:
+        gitlab.service: gitlab
+    spec:
+      containers:
+        - env:
+            - name: GITLAB_OMNIBUS_CONFIG
+              value: |
+                external_url 'http://localhost'
+          image: gitlab/gitlab-ce:latest
+          name: gitlab-ce
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+            - containerPort: 22
+          resources: {}
+      hostname: localhost
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: webservers
+  annotations:
+  creationTimestamp: null
+  labels:
+    gitlab.service: gitlab
+  name: gitlab
+spec:
+  type: LoadBalancer
+  ports:
+    - name: "9080"
+      port: 9080
+      targetPort: 80
+    - name: "9443"
+      port: 9443
+      targetPort: 443
+    - name: "23"
+      port: 23
+      targetPort: 22
+  selector:
+    gitlab.service: gitlab
+status:
+  loadBalancer: {}
